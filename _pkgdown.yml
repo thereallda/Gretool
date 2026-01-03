@@ -1,0 +1,19 @@
+url: https://thereallda.github.io/Gretool/
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+navbar:
+  title: "Gretool"
+  left: 
+    - text: "Vignettes"
+      menu:
+        - text: "Gretool Tutorial"
+          href: articles/Tutorial.html
+    - text: "Reference"
+      href: reference/index.html
+  right:
+    - icon: fa-home
+      href: ../
+    - icon: fa-github
+      href: https://github.com/thereallda/Gretool

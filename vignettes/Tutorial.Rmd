@@ -1,0 +1,236 @@
+---
+title: "Tutorial"
+output:
+  html_document:
+    theme: united
+    df_print: kable
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}    
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+`Gretool` package is implemented in R and publicly available at <https://github.com/thereallda/Gretool>.
+
+## Setup
+
+For this tutorial, we will demonstrate the `Gretool` workflow by using a glyco-capped RNA-seq data from human.
+
+We start by reading in the data, including count matrix and metadata. The metadata requires at lease two columns:
+
+1\. The *condition* column specifies the biological group of each sample, such as **A.Input**, indicating that the sample is an input sample from biological condition A.
+
+2\. The *enrich* column denotes the enrichment group of each sample, such as **Input**, representing the input library.
+
+```{r,warning=FALSE,message=FALSE}
+library(Gretool)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(patchwork)
+
+# read in metadata and counts matrix
+counts_mat <- read.csv("data/Counts.csv", row.names = 1)
+meta <- read.csv("data/metadata.csv", comment.char = "#")
+head(meta)
+# rownames of metadata should be consistent with the colnames of counts_mat
+rownames(meta) <- meta$id
+```
+
+Also, other information, such as batch group can be included in the metadata.
+
+Next, we use the count matrix and metadata to create a `Gretool` object.
+
+The `Gretool` object serves as a container that contains both data (raw and normalized counts data) and analysis (e.g., normalization performance evaluation score and enrichment results).
+
+When constructing `Gretool` object, we can provide following arguments:
+
+-   The id of input (`input.id = "Input"`) and enrichment (`enrich.id = "Enrich"`), same as the enrich column in the metadata (**required**).
+
+-   Prefix of spike-in genes (`spike.in.prefix = "^FB"`) (optional);
+
+-   The id of synthetic spike-in (`synthetic.id = c("Syn1", "Syn2")`), same with row names in `counts_mat` (optional);
+
+```{r}
+# create object
+Gretool <- createGretool(data = counts_mat,
+                         col.data = meta,
+                         input.id = "Input",
+                         enrich.id = "Enrich"
+                         )
+Gretool
+```
+
+## Quick start
+
+`Gretool` starts with quality control step to filter lowly-expressed genes. This step is performed with `FilterLowExprGene` by keeping genes with at least `min.count` in at least n samples. n is determined by the smallest group sample size specifying in `group` .
+
+```{r}
+Gretool <- FilterLowExprGene(Gretool, group = Gretool$condition, min.count = 10)
+Gretool
+```
+### Normalization and assessment
+
+The main `Gretool` function can be used to perform gene selection, normalization, and evaluation. This function return selected gene set in `rowData`, normalized count matrix in `counts` slot (when `return.norm=TRUE`), normalization factors (`norm_factors` slot), evaluation metrics and scores in `norm_metrics` and `norm_scores` slots, respectively. Detailed of these steps are described bellow.
+
+```{r}
+Gretool <- Gretool(Gretool, 
+               scaling.method = c( "TMM", "DESeq"),
+               ruv.norm = TRUE, ruv.k = 3,
+               eval.pam.k = 2:3, eval.pc.n = 3, 
+               return.norm = TRUE
+               )
+```
+
+## Effect of normalization
+
+Here, we use the top-ranked procedure DESeq_RUVs_k3 for downstream analysis.
+
+We perform PCA based on the count matrix from sample of interest before and after the normalization, for demonstrating the effect of normalization.
+
+```{r, fig.width=12, fig.height=6}
+# get scores for normalization
+norm_scores <- getScore(Gretool)
+
+head(norm_scores)
+
+# select normalization
+norm_method <- rownames(norm_scores[1,])
+
+# get normalized counts
+norm_data <- Gretool::Counts(Gretool, slot = "sample", method = norm_method)
+
+# get normalization factors
+norm_factors <- getFactor(Gretool, slot = "sample", method = norm_method)
+
+# create sample name, e.g., A.Input.1
+samples_name <- paste(Gretool$condition, Gretool$replicate, sep=".")
+
+# PCA for raw count
+p1 <- PCAplot(Gretool::Counts(Gretool, slot="sample", "Raw"), 
+            color = Gretool$condition,
+            shape = Gretool$enrich,
+            label = samples_name, 
+            vst.norm = TRUE) + 
+  ggtitle("Raw")
+
+# PCA for normalized count
+p2 <- PCAplot(log1p(norm_data), 
+            color = Gretool$condition,
+            shape = Gretool$enrich,
+            label = samples_name, 
+            vst.norm = FALSE) + 
+  ggtitle("After normalization")
+
+# combine two plots
+p1 + p2
+```
+
+## Find enrichment
+
+`Gretool` package can help you find enrichment genes from each biological groups via differential expression. It can identify genes that significantly increased in enrichment samples compared to input samples.
+
+`FindEnrichment` automates this processes for all groups provided in `condition` column.
+
+By default, enriched genes are defined as fold change of normalized transcript counts ≥ 2 (`logfc.cutoff = 1`), FDR \< 0.05 (`p.cutoff = 0.05`) in enrichment samples compared to those in input samples.
+
+Use `getEnrichment` to retrieve a list of enrichment result tables.
+
+```{r}
+# find all enriched genes
+Gretool <- FindEnrichment(Gretool, 
+                          slot="sample", 
+                          norm.method = norm_method, 
+                          logfc.cutoff = 1, 
+                          p.cutoff = 0.05)
+
+# get filtered enrichment results
+res.sig.ls <- getEnrichment(Gretool, slot="sample", filter=TRUE)
+names(res.sig.ls) <- c('H','T')
+# count number of enrichment in each group
+unlist(lapply(res.sig.ls, nrow))
+```
+
+Each enrichment table is a `data.frame` with a list of genes as rows, and associated information as columns (GeneID, logFC, p-values, etc.). The following columns are present in the table:
+
+-   `GeneID`: ID of genes.
+-   `logFC`: log2 fold-change between enrichment and input samples. Positive values indicate that the gene is more highly enriched in the enrichment group.
+-   `logCPM`: log2 CPM (counts per million) of the average expression of all samples.
+-   `LR`: Likelihood ratio of the likelihood ratio test.
+-   `PValue`: p-value from the likelihood ratio test.
+-   `FDR`: False discovery rate of the p-value, default "BH" method is applied.
+
+## Differential modification analysis
+
+You can perform differential modification analysis with `DiffModification`
+
+```{r}
+# create biological column in metadata
+meta$bio <- gsub('\\..*','',meta$condition)
+meta
+
+# testing 
+diff_mod <- DiffModification(
+  Gretool,
+  norm.method = norm_method,
+  col.data = meta,
+  contrast.df = data.frame(Group1=c('H'), 
+                           Group2=c('T')),
+  assay.colname = 'enrich',
+  biology.colname = 'bio',
+  input.id = 'Input',
+  enrich.id = 'Enrich',
+  eps = 1e-4,
+  shrink_lambda = 0
+)
+
+head(diff_mod[[1]])
+```
+By default, `DiffModification` output all differential modification results for all genes. You can subset the table based on the enriched genes from `FindEnrichment`
+
+```{r}
+enrich_ids <- unique(unlist(lapply(res.sig.ls, function(x) x$GeneID)))
+
+diff_mod_enrich <- subset(diff_mod[[1]], GeneID %in% enrich_ids)
+dim(diff_mod_enrich)
+```
+
+You can visualize the differential results with scatter plot 
+```{r}
+typedf1 <- data.frame(table(diff_mod_enrich$mod.type)) %>%
+  mutate(label = paste0(Var1,' (n=',Freq,')'),
+         prop = round(100*Freq/sum(Freq),1))
+
+ggplot(diff_mod_enrich, aes(T.logFC,H.logFC, color=mod.type)) +
+  geom_point(aes(size = -log10(mod.FDR)), alpha=0.8, shape=16, stroke=NA) +
+  theme_classic() +
+  theme(legend.position = 'right',
+        axis.text = element_text(color='black'),
+        plot.title = element_text(hjust=0.5))+
+  scale_color_manual(values=c("#A83C1E","#4F99B4","grey80"),
+                     labels=typedf1$label) +
+  labs(color='', 
+       title='H vs T')
+```
+
+## Session Info
+
+<details>
+
+<summary>**Session Info**</summary>
+
+```{r}
+sessionInfo()
+```
+
+</details>

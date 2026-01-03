@@ -1,0 +1,17 @@
+id,sample.id,condition,enrich,replicate
+H.input1,H.input1,H.Input,Input,1
+H.input2,H.input2,H.Input,Input,2
+H.input3,H.input3,H.Input,Input,3
+H.input4,H.input4,H.Input,Input,4
+H.ip1,H.ip1,H.Enrich,Enrich,1
+H.ip2,H.ip2,H.Enrich,Enrich,2
+H.ip3,H.ip3,H.Enrich,Enrich,3
+H.ip4,H.ip4,H.Enrich,Enrich,4
+T.input1,T.input1,T.Input,Input,1
+T.input2,T.input2,T.Input,Input,2
+T.input3,T.input3,T.Input,Input,3
+T.input4,T.input4,T.Input,Input,4
+T.ip1,T.ip1,T.Enrich,Enrich,1
+T.ip2,T.ip2,T.Enrich,Enrich,2
+T.ip3,T.ip3,T.Enrich,Enrich,3
+T.ip4,T.ip4,T.Enrich,Enrich,4

@@ -1,0 +1,42 @@
+Package: Gretool
+Title: Glyco-capped RNA Epitranscriptomic analysis TOOL
+Version: 1.0.0
+Authors@R: 
+    person(given = "Dean",
+           family = "Li",
+           role = c("aut", "cre"),
+           email = "lidean@gmail.com")
+Description: Gretool is a R package for analysis of glyco-capped RNA sequencing data, as well as other noncanonical-capped RNA sequencing data. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    cluster,
+    DESeq2,
+    dplyr,
+    edgeR,
+    EnvStats,
+    fpc,
+    ggplot2,
+    ggpubr,
+    ggrepel,
+    limma,
+    MatrixGenerics,
+    methods,
+    paintingr,
+    pbapply,
+    plotly,
+    rstatix,
+    S4Vectors,
+    stats,
+    stringr,
+    SummarizedExperiment,
+    tibble
+Suggests: 
+    knitr,
+    patchwork,
+    rmarkdown,
+    tidyr
+VignetteBuilder: knitr
+URL: https://thereallda.github.io/Gretool/
