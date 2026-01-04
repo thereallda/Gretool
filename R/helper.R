@@ -90,7 +90,7 @@ DiffModification <- function(object,
       fc.thresh = log2(1.3),
       contrast_name = i
     )
-    df1 <- subset(df1, GeneID %in% enrich_ids)
+    # df1 <- subset(df1, GeneID %in% enrich_ids)
     df1$logFC <- df1$logCPM <- NULL
     return(df1)
   })
