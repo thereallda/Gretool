@@ -1,0 +1,104 @@
+# Normalization and assessment
+
+Normalization and assessment
+
+## Usage
+
+``` r
+Gretool(
+  object,
+  auto = TRUE,
+  return.norm = FALSE,
+  n.neg.control = 1000,
+  n.pos.eval = 500,
+  n.neg.eval = 500,
+  neg.control = NULL,
+  pos.eval = NULL,
+  neg.eval = NULL,
+  scaling.method = c("TC", "UQ", "TMM", "DESeq", "PossionSeq"),
+  ruv.norm = TRUE,
+  ruv.k = 1,
+  ruv.drop = 0,
+  eval.pam.k = 2:6,
+  eval.pc.n = 3
+)
+```
+
+## Arguments
+
+- object:
+
+  Gretool object.
+
+- auto:
+
+  Whether to automatically select negative control, positive evaluation
+  and negative evaluation genes, default: TRUE.
+
+- return.norm:
+
+  Whether to return normalized counts in object. By default, not return
+  normalized counts for reducing memory costs.
+
+- n.neg.control:
+
+  Number of negative control genes for RUV normalization, default: 1000.
+
+- n.pos.eval:
+
+  Number of positive evaluation genes for wanted variation assessment,
+  default: 500.
+
+- n.neg.eval:
+
+  Number of negative evaluation genes for unwanted variation assessment,
+  default: 500.
+
+- neg.control:
+
+  Vector of negative control genes' id for RUV normalization, default:
+  NULL.
+
+- pos.eval:
+
+  Vector of positive evaluation genes' id for wanted variation
+  assessment, default: NULL.
+
+- neg.eval:
+
+  Vector of negative evaluation genes' id for unwanted variation
+  assessment, default: NULL.
+
+- scaling.method:
+
+  Vector of scaling methods that are applied to the data. Available
+  methods are: `c("TC", "UQ", "TMM", "DESeq", "PossionSeq")`. Select one
+  or multiple methods. By default all scaling methods will be applied.
+
+- ruv.norm:
+
+  Whether to perform RUV normalization.
+
+- ruv.k:
+
+  The number of factors of unwanted variation to be estimated from the
+  data, default: 1.
+
+- ruv.drop:
+
+  The number of singular values to drop in the estimation of unwanted
+  variation, default: 0.
+
+- eval.pam.k:
+
+  Integer or vector of integers indicates the number of clusters for PAM
+  clustering in performance evaluation, default: 2:6.
+
+- eval.pc.n:
+
+  Integer indicates the evaluation metrics will be calculated in the
+  first nth PCs, default: 3.
+
+## Value
+
+Gretool object.
